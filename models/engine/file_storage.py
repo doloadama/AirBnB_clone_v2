@@ -11,11 +11,18 @@ class FileStorage:
     def delete(self, obj=None):
         """deletes obj from __objects if it's inside"""
         if obj:
-            k = "{}.{}".format(type(obj).__name__.__obj.id)
-            del self.__objects[k]
+            del(self.__objects["{}.{}".format(type(obj).__name__.obj.id)])
+            del(obj)
 
     def all(self, cls=None):
         """Returns a dictionary of models currently in storage"""
+        if cls:
+            all = dict()
+            for i in self.__objects.keys():
+                if i.split('.')[0] == cls.__name__:
+                    all[i] = self.__objects[i]
+            return all
+        
         return FileStorage.__objects
 
     def new(self, obj):
