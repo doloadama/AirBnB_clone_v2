@@ -1,42 +1,28 @@
-# deploy static
-$whisper_dirs = [ '/data/', '/data/web_static/',
-                        '/data/web_static/releases/', '/data/web_static/shared/',
-                        '/data/web_static/releases/test/'
-                  ]
-
-package {'nginx':
-  ensure  => installed,
+# puppet manifest preparing a server for static content deployment
+exec { 'Update server':
+  command => '/usr/bin/env apt-get -y update',
 }
-
-file { $whisper_dirs:
-        ensure  => 'directory',
-        owner   => 'ubuntu',
-        group   => 'ubuntu',
-        recurse => 'remote',
-        mode    => '0777',
+-> exec {'Install NGINX':
+  command => '/usr/bin/env apt-get -y install nginx',
 }
-file { '/data/web_static/current':
-  ensure => link,
-  target => '/data/web_static/releases/test/',
+-> exec {'Creates directory release/test':
+  command => '/usr/bin/env mkdir -p /data/web_static/releases/test/',
 }
-file {'/data/web_static/releases/test/index.html':
-  ensure  => present,
-  content => 'Holberton School for the win!',
+-> exec {'Creates directories shared':
+  command => '/usr/bin/env mkdir -p /data/web_static/shared/',
 }
-
-exec { 'chown -R ubuntu:ubuntu /data/':
-  path => '/usr/bin/:/usr/local/bin/:/bin/'
+-> exec {'Write Hello World in index with tee command':
+  command => '/usr/bin/env echo "Hello Wolrd Puppet" | sudo tee /data/web_static/releases/test/index.html',
 }
-
-file_line {'deploy static':
-  path  => '/etc/nginx/sites-available/default',
-  after => 'server_name _;',
-  line  => "\n\tlocation /hbnb_static {\n\t\talias /data/web_static/current/;\n\t}",
+-> exec {'Create Symbolic link':
+  command => '/usr/bin/env ln -sf /data/web_static/releases/test /data/web_static/current',
 }
-
-service {'nginx':
-  ensure  => running,
+-> exec {'Change owner and group like ubuntu':
+  command => '/usr/bin/env chown -R ubuntu:ubuntu /data',
 }
-
-exec {'/etc/init.d/nginx restart':
+-> exec {'Add new configuration to NGINX':
+  command => '/usr/bin/env sed -i "/listen 80 default_server;/a location /hbnb_static/ { alias /data/web_static/current/;}" /etc/nginx/sites-available/default',
+}
+-> exec {'Restart NGINX':
+  command => '/usr/bin/env service nginx restart',
 }
