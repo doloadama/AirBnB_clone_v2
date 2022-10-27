@@ -1,28 +1,34 @@
-# puppet manifest preparing a server for static content deployment
-exec { 'Update server':
-  command => '/usr/bin/env apt-get -y update',
-}
--> exec {'Install NGINX':
-  command => '/usr/bin/env apt-get -y install nginx',
-}
--> exec {'Creates directory release/test':
-  command => '/usr/bin/env mkdir -p /data/web_static/releases/test/',
-}
--> exec {'Creates directories shared':
-  command => '/usr/bin/env mkdir -p /data/web_static/shared/',
-}
--> exec {'Write Hello World in index with tee command':
-  command => '/usr/bin/env echo "Hello Wolrd Puppet" | sudo tee /data/web_static/releases/test/index.html',
-}
--> exec {'Create Symbolic link':
-  command => '/usr/bin/env ln -sf /data/web_static/releases/test /data/web_static/current',
-}
--> exec {'Change owner and group like ubuntu':
-  command => '/usr/bin/env chown -R ubuntu:ubuntu /data',
-}
--> exec {'Add new configuration to NGINX':
-  command => '/usr/bin/env sed -i "/listen 80 default_server;/a location /hbnb_static/ { alias /data/web_static/current/;}" /etc/nginx/sites-available/default',
-}
--> exec {'Restart NGINX':
-  command => '/usr/bin/env service nginx restart',
-}
+#!/usr/bin/python3
+"""web server distribution"""
+from fabric.api import *
+from fabric.state import commands, connections
+import os.path
+
+env.user = 'ubuntu'
+env.hosts = ["104.196.155.240", "34.74.146.120"]
+env.key_filename = "~/id_rsa"
+
+
+def do_clean(number=0):
+    """deletes out-of-date archives"""
+    local('ls -t ~/AirBnB_Clone_V2/versions/').split()
+    with cd("/data/web_static/releases"):
+        target_R = sudo("ls -t .").split()
+    paths = "/data/web_static/releases"
+    number = int(number)
+    if number == 0:
+        num = 1
+    else:
+        num = number
+    if len(target_R) > 0:
+        if len(target) == number or len(target) == 0:
+            pass
+        else:
+            cl = target[num:]
+            for i in range(len(cl)):
+                local('rm -f ~/AirBnB_Clone_V2/versions/{}'.format(target[-1]))
+        rem = target_R[num:]
+        for j in range(len(rem)):
+            sudo('rm -rf {}/{}'.format(paths, rem[-1].strip(".tgz")))
+    else:
+        pass
